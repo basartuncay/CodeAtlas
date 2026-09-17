@@ -135,4 +135,4 @@ While writing the Dockerfile for the one-command setup, a real `next build` run 
 
 ## Docker Compose test status
 
-_TODO — to be confirmed after a real local `docker compose up` run._
+Docker Compose dosyaları statik olarak gözden geçirildi (multi-stage build, git CLI dahil, env akışı); henüz gerçek `docker compose up` ile uçtan uca test edilmedi — dashboard yerine manuel `npm run dev --workspace=@codeatlas/web` yoluyla çalıştırılıp doğrulandı.
