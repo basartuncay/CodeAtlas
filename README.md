@@ -137,4 +137,4 @@ While writing the Dockerfile for the one-command setup, a real `next build` run 
 
 ## Docker Compose test status
 
-Docker Compose dosyaları statik olarak gözden geçirildi (multi-stage build, git CLI dahil, env akışı); henüz gerçek `docker compose up` ile uçtan uca test edilmedi — dashboard yerine manuel `npm run dev --workspace=@codeatlas/web` yoluyla çalıştırılıp doğrulandı.
+The Docker Compose files have been statically reviewed (multi-stage build, git CLI included, env flow) but not yet tested end-to-end with a real `docker compose up` — the dashboard was instead run and verified manually via `npm run dev --workspace=@codeatlas/web`.
