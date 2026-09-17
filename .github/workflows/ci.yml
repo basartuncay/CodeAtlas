@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - run: npm run typecheck --workspaces --if-present
+
+      - run: npm test --workspaces --if-present
+
+  self-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history, not the default shallow clone — computeChurn
+          # reads real git log; a shallow clone would make churn numbers
+          # meaningless (near-zero history to look at).
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      # Deterministic engine only — analyzeRepository never calls the LLM
+      # (that's packages/llm-synthesis's separate concern, already covered
+      # by its own contract tests with no live API call). No API key, no
+      # spend, on every push.
+      - run: npm run self-analyze --workspace=@codeatlas/engine
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: analysis-model
+          path: packages/engine/analysis.json
