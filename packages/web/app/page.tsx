@@ -36,15 +36,15 @@ export default function Home() {
             analyzed {new Date(cached.model.repo.analyzed_at).toLocaleString()}
           </div>
 
-          <div className="mb-10 grid grid-cols-1 gap-6 lg:grid-cols-5">
-            <section className="lg:col-span-2">
+          <div className="mb-10 space-y-8">
+            <section>
               <h2 className="mb-3 text-lg font-medium">Hotspot ranking</h2>
-              <div className="max-h-[480px] overflow-y-auto">
+              <div className="max-h-[420px] overflow-auto rounded border border-neutral-200">
                 <HotspotRankingTable modules={cached.model.modules} />
               </div>
             </section>
 
-            <section className="lg:col-span-3">
+            <section>
               <h2 className="mb-3 text-lg font-medium">Dependency graph</h2>
               <DependencyGraph
                 moduleIds={cached.model.modules.map((m) => m.id)}
