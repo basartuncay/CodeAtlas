@@ -1,0 +1,13 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      # Read from a .env file in this directory (docker compose loads it
+      # automatically for ${...} substitution) — never baked into the
+      # image itself. If .env has no ANTHROPIC_API_KEY, this is empty and
+      # the app still starts; only the "Run analysis" LLM step will fail.
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}

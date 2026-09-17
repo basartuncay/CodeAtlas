@@ -1,0 +1,20 @@
+# Host-installed deps and build output — rebuilt fresh inside the image;
+# copying the host's (possibly different-platform) node_modules or a stale
+# .next in would break or shadow the in-image build.
+node_modules
+**/node_modules
+.next
+**/.next
+packages/engine/analysis.json
+
+# Secrets — never baked into an image layer. ANTHROPIC_API_KEY is passed
+# in at container run time via docker-compose's `environment:`, not copied
+# in as a file.
+.env
+.env.local
+.env.*.local
+
+# NOTE: .git is intentionally NOT excluded here. analyzeRepository's
+# self-analysis (demo beat 1) reads real git history via computeChurn and
+# real commit/remote info — the container needs an actual .git directory
+# on disk, not just the source files.

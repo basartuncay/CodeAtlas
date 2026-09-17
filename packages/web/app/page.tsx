@@ -4,6 +4,14 @@ import { HotspotRankingTable } from "@/components/HotspotRankingTable";
 import { NarrativePanel } from "@/components/NarrativePanel";
 import { RunAnalysisButton } from "@/components/RunAnalysisButton";
 
+// getCachedAnalysis() reads a plain in-memory value, not one of Next's
+// recognized dynamic APIs (cookies/headers/searchParams) — without this,
+// `next build` prerenders this page as STATIC (verified: it does, by
+// default), baking in whatever the cache held at build time (always
+// empty) forever, so a real POST /api/analyze afterward would never be
+// reflected in production. Confirmed via a real `next build` run.
+export const dynamic = "force-dynamic";
+
 export default function Home() {
   const cached = getCachedAnalysis();
 
