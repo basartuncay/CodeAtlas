@@ -31,7 +31,7 @@ export function NarrativePanel({
 
   return (
     <div>
-      {summary ? <p className="mb-4 text-neutral-700">{summary}</p> : null}
+      {summary ? <p className="mb-4 text-neutral-700 dark:text-neutral-300">{summary}</p> : null}
 
       <p className="mb-4 text-xs text-neutral-500">
         {acceptedFindings.length} verified · {rejectedFindings.length} rejected
