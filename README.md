@@ -14,7 +14,9 @@ This isn't a claim of novelty — tools like ArchMind, CodeMap, DevLens, and Cod
 
 ## Screenshot / demo GIF
 
-_TODO — to be added after a local Docker Compose run is verified end-to-end._
+![CodeAtlas dashboard](docs/screenshot.png)
+
+Self-analysis of this repo: hotspot ranking, dependency graph (amber-bordered nodes and animated edges mark the two detected cycles), and the narrative panel with both an accepted and a rejected LLM finding.
 
 ## Architecture
 
