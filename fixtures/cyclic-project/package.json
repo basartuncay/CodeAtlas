@@ -1,0 +1,6 @@
+{
+  "name": "codeatlas-fixture-cyclic-project",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Fixture project with one 3-file circular dependency, for cycle detection (Tarjan SCC) and blast radius (BFS) unit tests."
+}
