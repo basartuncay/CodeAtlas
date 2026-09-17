@@ -1,0 +1,6 @@
+{
+  "name": "codeatlas-fixture-simple-project",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Minimal fixture project for engine unit tests (fan-in/fan-out/instability). No cycles."
+}
