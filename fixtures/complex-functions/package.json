@@ -1,0 +1,6 @@
+{
+  "name": "codeatlas-fixture-complex-functions",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Fixture with deliberate branching/looping control flow, for cyclomatic complexity unit tests."
+}

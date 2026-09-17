@@ -13,3 +13,6 @@ export type { BlastRadiusResult } from './blast-radius/types';
 
 export { computeChurn } from './churn/compute-churn';
 export type { ChurnResult, ChurnWindow } from './churn/types';
+
+export { computeComplexity } from './complexity/compute-complexity';
+export type { ComplexityResult } from './complexity/types';
