@@ -1,4 +1,5 @@
 import { getCachedAnalysis } from "@/lib/analysis-cache";
+import { DependencyGraph } from "@/components/DependencyGraph";
 import { HotspotRankingTable } from "@/components/HotspotRankingTable";
 import { NarrativePanel } from "@/components/NarrativePanel";
 import { RunAnalysisButton } from "@/components/RunAnalysisButton";
@@ -7,7 +8,7 @@ export default function Home() {
   const cached = getCachedAnalysis();
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-10">
+    <main className="mx-auto max-w-7xl px-6 py-10">
       <header className="mb-8 flex items-center justify-between">
         <h1 className="text-2xl font-semibold">CodeAtlas</h1>
         <RunAnalysisButton />
@@ -27,10 +28,23 @@ export default function Home() {
             analyzed {new Date(cached.model.repo.analyzed_at).toLocaleString()}
           </div>
 
-          <section className="mb-10">
-            <h2 className="mb-3 text-lg font-medium">Hotspot ranking</h2>
-            <HotspotRankingTable modules={cached.model.modules} />
-          </section>
+          <div className="mb-10 grid grid-cols-1 gap-6 lg:grid-cols-5">
+            <section className="lg:col-span-2">
+              <h2 className="mb-3 text-lg font-medium">Hotspot ranking</h2>
+              <div className="max-h-[480px] overflow-y-auto">
+                <HotspotRankingTable modules={cached.model.modules} />
+              </div>
+            </section>
+
+            <section className="lg:col-span-3">
+              <h2 className="mb-3 text-lg font-medium">Dependency graph</h2>
+              <DependencyGraph
+                moduleIds={cached.model.modules.map((m) => m.id)}
+                edges={cached.model.edges}
+                cyclicModuleIds={cached.model.modules.filter((m) => m.in_cycle).map((m) => m.id)}
+              />
+            </section>
+          </div>
 
           <section>
             <h2 className="mb-3 text-lg font-medium">Narrative</h2>
