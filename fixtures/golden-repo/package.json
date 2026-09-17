@@ -1,0 +1,6 @@
+{
+  "name": "codeatlas-fixture-golden-repo",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Golden-file fixture: exercises the full analyzeRepository pipeline end-to-end (graph, coupling, cycle, blast radius, complexity, LOC, churn, hotspot, risks) against one small realistic project. The actual git history used by the golden-file test is synthesized separately by packages/engine/tests/helpers/create-golden-fixture-repo.ts, which replays these files' content into a throwaway temp repo with fixed commit dates — these files are the static, reviewable source of truth for that content; there is no .git here."
+}

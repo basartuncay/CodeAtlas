@@ -20,3 +20,13 @@ export type { ComplexityResult } from './complexity/types';
 export { computeHotspotScore } from './hotspot/compute-hotspot';
 export { percentileRank } from './hotspot/percentile-rank';
 export type { HotspotResult } from './hotspot/types';
+
+export { computeLoc } from './loc/compute-loc';
+export type { LocResult } from './loc/types';
+
+export { computeRisks } from './risks/compute-risks';
+export type { RiskRuleInput } from './risks/compute-risks';
+export type { Risk, RiskSeverity } from './risks/types';
+
+export { analyzeRepository } from './analyze/analyze-repository';
+export type { AnalysisResult, AnalyzeOptions, ModuleResult } from './analyze/types';
