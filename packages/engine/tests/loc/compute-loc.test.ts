@@ -1,6 +1,8 @@
 import { fileURLToPath } from 'node:url';
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { computeLoc } from '../../src/loc/compute-loc';
 
 // fixtures/complex-functions/EXPECTED.md — LOC section: getEndLineNumber()
@@ -40,5 +42,37 @@ describe('computeLoc — fixtures/complex-functions', () => {
 
   it('src/riskLevel.ts: wc -l=10 -> loc=11', () => {
     expect(locFor('src/riskLevel.ts', results)).toBe(11);
+  });
+});
+
+describe('computeLoc — regression: process.cwd() nested under projectRoot', () => {
+  // Same underlying ts-morph bug as computeComplexity's identical
+  // regression test — see that file's comment for the full explanation
+  // and how this exact repro shape (cwd = <root>/packages/web,
+  // realpath-normalized target root, file under a sibling package) was
+  // arrived at. computeLoc uses the same Project.addSourceFilesAtPaths
+  // call, so it has the identical bug and the identical fix.
+  let targetRoot: string | undefined;
+  let cwdInsideTarget: string | undefined;
+  let originalCwd: string;
+
+  beforeEach(() => {
+    originalCwd = process.cwd();
+    targetRoot = realpathSync(mkdtempSync(path.join(tmpdir(), 'codeatlas-loc-cwd-regression-')));
+    mkdirSync(path.join(targetRoot, 'packages', 'web'), { recursive: true });
+    mkdirSync(path.join(targetRoot, 'packages', 'engine', 'src'), { recursive: true });
+    writeFileSync(path.join(targetRoot, 'packages', 'engine', 'src', 'a.ts'), 'export const a = 1;\n');
+    cwdInsideTarget = path.join(targetRoot, 'packages', 'web');
+  });
+
+  afterEach(() => {
+    process.chdir(originalCwd);
+    if (targetRoot) rmSync(targetRoot, { recursive: true, force: true });
+  });
+
+  it('finds a file under a sibling package when cwd is nested two levels under the target root', () => {
+    process.chdir(cwdInsideTarget as string);
+    const results = computeLoc(targetRoot as string);
+    expect(locFor('packages/engine/src/a.ts', results)).toBe(2);
   });
 });

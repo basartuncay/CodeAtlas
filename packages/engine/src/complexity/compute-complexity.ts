@@ -62,14 +62,31 @@ function complexityOfFile(functions: Node[]): number {
 
 export function computeComplexity(projectRoot: string): ComplexityResult[] {
   const project = new Project({ skipAddingFilesFromTsConfig: true });
-  project.addSourceFilesAtPaths([
-    path.join(projectRoot, '**/*.ts'),
-    `!${path.join(projectRoot, '**/*.d.ts')}`,
-    `!${path.join(projectRoot, '**/node_modules/**')}`,
-  ]);
 
-  return project
-    .getSourceFiles()
+  // ts-morph's glob-based file discovery silently drops directories along
+  // process.cwd()'s own ancestor chain (and everything reached only by
+  // continuing to crawl a pruned ancestor) — even though every pattern
+  // here is already absolute and has nothing to do with cwd. Concretely:
+  // analyzing the monorepo root from cwd=<root>/packages/web silently
+  // dropped packages/engine, packages/web itself, and packages/llm-synthesis
+  // entirely. Matching cwd to projectRoot for the duration of the scan
+  // avoids the mismatch. See the "process.cwd() nested under projectRoot"
+  // regression test for the confirmed repro.
+  const originalCwd = process.cwd();
+  let sourceFiles;
+  try {
+    process.chdir(projectRoot);
+    project.addSourceFilesAtPaths([
+      path.join(projectRoot, '**/*.ts'),
+      `!${path.join(projectRoot, '**/*.d.ts')}`,
+      `!${path.join(projectRoot, '**/node_modules/**')}`,
+    ]);
+    sourceFiles = project.getSourceFiles();
+  } finally {
+    process.chdir(originalCwd);
+  }
+
+  return sourceFiles
     .map((sourceFile) => {
       const functions = FUNCTION_KINDS.flatMap((kind) => sourceFile.getDescendantsOfKind(kind));
       const moduleId = path.relative(projectRoot, sourceFile.getFilePath()).split(path.sep).join('/');
