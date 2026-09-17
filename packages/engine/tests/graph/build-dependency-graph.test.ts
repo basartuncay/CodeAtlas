@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, afterEach } from 'vitest';
 import { fileURLToPath } from 'node:url';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { buildDependencyGraph } from '../../src/graph/build-dependency-graph';
 
@@ -38,5 +40,48 @@ describe('buildDependencyGraph', () => {
         'src/userService.ts -> src/database.ts',
       ].sort(),
     );
+  });
+});
+
+describe('buildDependencyGraph — regression: project root under a symlinked temp dir', () => {
+  // On macOS, os.tmpdir() lives under /var, which is itself a symlink to
+  // /private/var. Passing that non-realpath'd path straight through to
+  // dependency-cruiser as baseDir made it resolve circular imports'
+  // targets via realpath while the initial file-scan used the given
+  // (non-realpath'd) path — the same file then showed up TWICE, once
+  // under each path convention, as if they were two different modules.
+  // This never surfaced before because every prior fixture lived directly
+  // under this repo's own (non-symlinked) path. Reproduced with a 2-file
+  // cycle, since the bug only manifested when resolving an import back to
+  // an already-discovered file.
+  let tempRoot: string | undefined;
+
+  afterEach(() => {
+    if (tempRoot) {
+      rmSync(tempRoot, { recursive: true, force: true });
+      tempRoot = undefined;
+    }
+  });
+
+  it('does not duplicate modules when the root is reached through a symlink', async () => {
+    tempRoot = mkdtempSync(path.join(tmpdir(), 'codeatlas-symlink-regression-'));
+    const srcDir = path.join(tempRoot, 'src');
+    mkdirSync(srcDir);
+    writeFileSync(
+      path.join(srcDir, 'cache.ts'),
+      "import { save } from './store';\nexport function put(): void { save(); }\n",
+    );
+    writeFileSync(
+      path.join(srcDir, 'store.ts'),
+      "import { put } from './cache';\nexport function save(): void { put(); }\n",
+    );
+
+    const graph = await buildDependencyGraph(tempRoot);
+
+    expect([...graph.modules].sort()).toEqual(['src/cache.ts', 'src/store.ts']);
+    expect(graph.edges.map((edge) => `${edge.from} -> ${edge.to}`).sort()).toEqual([
+      'src/cache.ts -> src/store.ts',
+      'src/store.ts -> src/cache.ts',
+    ]);
   });
 });
