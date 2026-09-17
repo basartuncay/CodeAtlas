@@ -197,3 +197,71 @@ fixture veya kural setinde düzeltme gerekmedi.
 | src/formatMessage.ts                  | 1 | 3 |
 | src/processQueue.ts                   | 1 | 5 |
 | src/retryWithLogging.ts               | 2 | 5 |
+
+## Hotspot fusion (Adım 2) — sentetik churn verisiyle
+
+Bu bölüm `computeHotspotScore`'u test ediyor. **Önemli netlik**: bu
+fixture'ın gerçek bir git geçmişi yok. Yukarıdaki complexity sayıları
+gerçek (`ts-morph` ile doğrulandı). Aşağıdaki churn sayıları ise **sentetik
+— elle seçilmiş, gerçek git'ten gelmiyor** (git parsing'in kendisi zaten
+`fixtures/churn-repo/EXPECTED.md`'de ayrı test edildi). Amaç: füzyon
+formülünün matematiğini, gerçekçi ama kontrollü sayılarla test etmek.
+
+Normalizasyon yöntemi ve formülü: `docs/adr/0004-percentile-rank-normalization-for-hotspot-fusion.md`.
+
+### Sentetik churn girdisi
+
+| module_id                | churn_commits |
+|---------------------------|:---:|
+| src/riskLevel.ts          | 8 |
+| src/formatMessage.ts      | 1 |
+| src/processQueue.ts       | 1 |
+| src/retryWithLogging.ts   | (hiç yok → füzyonda 0 kabul edilir) |
+| src/deletedLegacy.ts      | 15 (**hayalet** — complexity listesinde yok, artık var olmayan bir dosyayı temsil ediyor; füzyon çıktısından VE normalizasyon popülasyonundan tamamen atılmalı) |
+
+### Hesaplama (n=4 — `deletedLegacy.ts` popülasyona hiç dahil değil)
+
+`normalized(x) = |{v < x}| / (n-1)`, n=4 → payda=3.
+
+**Complexity popülasyonu**: `[3, 5, 5, 6]` (formatMessage, processQueue, retryWithLogging, riskLevel)
+- formatMessage (3): count(<3)=0 → 0/3 = **0.000**
+- processQueue (5): count(<5)=1 (sadece 3) → 1/3 = **0.333**
+- retryWithLogging (5): count(<5)=1 (sadece 3) → 1/3 = **0.333**
+- riskLevel (6): count(<6)=3 (3,5,5) → 3/3 = **1.000**
+
+**Churn popülasyonu**: `[0, 1, 1, 8]` (retryWithLogging=0, formatMessage=1, processQueue=1, riskLevel=8)
+- retryWithLogging (0): count(<0)=0 → 0/3 = **0.000**
+- formatMessage (1): count(<1)=1 (sadece 0) → 1/3 = **0.333**
+- processQueue (1): count(<1)=1 → 1/3 = **0.333**
+- riskLevel (8): count(<8)=3 (0,1,1) → 3/3 = **1.000**
+
+### Özet tablo
+
+| module_id              | complexity | churn | norm_complexity | norm_churn | hotspot_score |
+|--------------------------|---:|---:|---:|---:|---:|
+| src/formatMessage.ts      | 3 | 1 | 0.000 | 0.333 | **0.000** |
+| src/processQueue.ts       | 5 | 1 | 0.333 | 0.333 | **0.111** |
+| src/retryWithLogging.ts   | 5 | 0 | 0.333 | 0.000 | **0.000** |
+| src/riskLevel.ts          | 6 | 8 | 1.000 | 1.000 | **1.000** |
+
+`src/deletedLegacy.ts` **çıktıda hiç görünmemeli** (4 kayıt, 5 değil).
+
+**Yorum**: `retryWithLogging.ts` yüksek complexity'ye (5) sahip ama bu
+pencerede hiç değişmemiş → hotspot_score sıfır (karmaşık ama durağan kod,
+şu an acil değil). `riskLevel.ts` hem en karmaşık hem en çok değişen →
+net #1 hotspot (1.000).
+
+## Kenar durum: tüm değerler eşitse → hepsi `normalized = 0.0` (1.0 DEĞİL)
+
+`docs/adr/0004-percentile-rank-normalization-for-hotspot-fusion.md`'de
+detaylandırıldığı gibi: formül **kesin olarak daha küçük olan değerlerin
+sayısını** kullanıyor (`count(v < x)`, `<=` değil). Popülasyondaki
+HERKESİN değeri aynıysa, hiç kimse "birinden daha büyük" değildir — bu
+yüzden hepsi **0.0** alır, sezgisel olarak beklenebilecek 1.0 (herkes
+maksimumda) veya 0.5 değil.
+
+**Örnek**: 3 modülün de `cyclomatic_complexity = 5` olduğu bir popülasyon:
+- Her biri için count(<5) = 0 → 0/(3-1) = **0.000** (üçü için de aynı)
+
+Bu bug değil, formülün kesin (strict `<`) tanımının doğal ve dokümante
+edilmiş bir sonucu — bir unit test bunu özellikle doğruluyor.

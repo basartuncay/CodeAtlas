@@ -16,3 +16,7 @@ export type { ChurnResult, ChurnWindow } from './churn/types';
 
 export { computeComplexity } from './complexity/compute-complexity';
 export type { ComplexityResult } from './complexity/types';
+
+export { computeHotspotScore } from './hotspot/compute-hotspot';
+export { percentileRank } from './hotspot/percentile-rank';
+export type { HotspotResult } from './hotspot/types';
