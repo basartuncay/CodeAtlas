@@ -1,5 +1,6 @@
 import { getCachedAnalysis } from "@/lib/analysis-cache";
 import { HotspotRankingTable } from "@/components/HotspotRankingTable";
+import { NarrativePanel } from "@/components/NarrativePanel";
 import { RunAnalysisButton } from "@/components/RunAnalysisButton";
 
 export default function Home() {
@@ -26,9 +27,20 @@ export default function Home() {
             analyzed {new Date(cached.model.repo.analyzed_at).toLocaleString()}
           </div>
 
-          <section>
+          <section className="mb-10">
             <h2 className="mb-3 text-lg font-medium">Hotspot ranking</h2>
             <HotspotRankingTable modules={cached.model.modules} />
+          </section>
+
+          <section>
+            <h2 className="mb-3 text-lg font-medium">Narrative</h2>
+            <NarrativePanel
+              summary={cached.narrative.summary}
+              schemaValid={cached.narrative.schemaValid}
+              acceptedFindings={cached.narrative.acceptedFindings}
+              rejectedFindings={cached.narrative.rejectedFindings}
+              showModuleLink
+            />
           </section>
         </>
       )}

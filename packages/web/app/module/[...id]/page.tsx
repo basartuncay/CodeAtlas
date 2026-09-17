@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getCachedAnalysis } from "@/lib/analysis-cache";
+import { NarrativePanel } from "@/components/NarrativePanel";
 
 function formatMetric(value: number): string {
   return Number.isNaN(value) ? "—" : value.toString();
@@ -119,28 +120,7 @@ export default async function ModuleDrillDown({
         <h2 className="mb-3 text-sm font-medium text-neutral-500">
           Narrative findings for this module
         </h2>
-        {accepted.length === 0 && rejected.length === 0 ? (
-          <p className="text-sm text-neutral-500">No findings cite this module.</p>
-        ) : (
-          <ul className="space-y-3">
-            {accepted.map((finding, i) => (
-              <li key={`accepted-${i}`} className="border-l-4 border-green-500 pl-3 text-sm">
-                <p>{finding.claim}</p>
-                <p className="mt-1 text-xs text-green-700">
-                  ✓ Verified: {finding.supporting_metric} = {finding.value_cited}
-                </p>
-              </li>
-            ))}
-            {rejected.map((rejection, i) => (
-              <li key={`rejected-${i}`} className="border-l-4 border-red-500 pl-3 text-sm">
-                <p className="text-neutral-500 line-through">{rejection.finding.claim}</p>
-                <p className="mt-1 font-mono text-xs text-red-700">
-                  ⚠ Rejected — {rejection.detail}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
+        <NarrativePanel acceptedFindings={accepted} rejectedFindings={rejected} />
       </section>
     </main>
   );
