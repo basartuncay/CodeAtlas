@@ -265,3 +265,42 @@ maksimumda) veya 0.5 değil.
 
 Bu bug değil, formülün kesin (strict `<`) tanımının doğal ve dokümante
 edilmiş bir sonucu — bir unit test bunu özellikle doğruluyor.
+
+## LOC (Adım 4) — `ts-morph`'un `getEndLineNumber()`'ı ile, gerçek davranış doğrulandı
+
+**İlk varsayımım YANLIŞTI ve düzeltildi**: "LOC = `wc -l`'nin verdiği sayı"
+demiştim, ama gerçek `ts-morph` davranışını (trailing newline'lı/newline'sız
+üç test dosyasıyla) deneyerek şunu buldum:
+
+`getEndLineNumber()`, dosya metnini `'\n'` karakterine göre böler ve parça
+sayısını döner (`text.split('\n').length` ile birebir aynı). Bu, **her
+zaman** `wc -l`'nin verdiği sayıdan (ki o gerçek `\n` KARAKTER sayısıdır)
+**tam olarak 1 fazla** — dosyanın sonunda trailing newline olsun ya da
+olmasın, bu fark sabit +1:
+
+| test dosyası | içerik | `wc -l` | `getEndLineNumber()` |
+|---|---|---:|---:|
+| trailing newline yok | `"line1\nline2\nline3"` | 2 | 3 |
+| tek trailing newline | `"line1\nline2\nline3\n"` | 3 | 4 |
+| çift trailing newline | `"line1\nline2\nline3\n\n"` | 4 | 5 |
+
+Gerçek bir fixture dosyasında da doğrulandı: `riskLevel.ts` → `wc -l` = 10,
+`getEndLineNumber()` = 11.
+
+**Karar**: `computeLoc`, `getEndLineNumber()`'ı olduğu gibi kullanacak
+(ekstra ayarlama yapmayacak). Yani **CodeAtlas'ın LOC sayısı, `wc -l`'den
+her zaman tam 1 fazla olacak** — bu, satır sonu newline karakteri "bir
+satır daha" olarak sayıldığı için, ve tutarlı/deterministik bir kural.
+Dokümantasyonda ve dashboard'da bu netlik korunmalı ("bu LOC değeri
+`wc -l` ile karşılaştırılırsa +1 fark normaldir").
+
+### `complex-functions` fixture'ı için beklenen LOC değerleri
+
+`getEndLineNumber()` gerçek dosyalara karşı çalıştırılıp doğrulandı:
+
+| module_id | `wc -l` | LOC (`getEndLineNumber()`) |
+|---|---:|---:|
+| src/formatMessage.ts | 5 | **6** |
+| src/processQueue.ts | 20 | **21** |
+| src/retryWithLogging.ts | 16 | **17** |
+| src/riskLevel.ts | 10 | **11** |
