@@ -12,6 +12,36 @@ This isn't a claim of novelty — tools like ArchMind, CodeMap, DevLens, and Cod
 2. **A grounding/hallucination-rejection validator sits between the LLM and the user**: schema validation, referential integrity against real module IDs, and numeric-tolerance checks against the real computed values. Rejections are logged and shown, not hidden.
 3. **CodeAtlas analyzes itself in CI as a quality gate**, not just as a demo target — see the [`self-analysis`](.github/workflows/ci.yml) job.
 
+## Use it in your repo (GitHub Action)
+
+Add a step to any TypeScript/JavaScript repo's workflow. It runs the deterministic engine only
+(no LLM, no API key), writes a hotspot table, cycles and high-severity risks to the job summary,
+saves the full JSON model, and can fail the build past a threshold:
+
+```yaml
+jobs:
+  codeatlas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # churn needs real history; a shallow clone reads as zero churn
+      - uses: basartuncay/CodeAtlas@v1
+        with:
+          path: .                 # or a package folder in a monorepo
+          max-hotspot: "0.9"      # optional quality gate (0-1); omit to report only
+          top: "10"
+```
+
+Locally, the same analysis is one command:
+
+```bash
+npm ci --workspace=@codeatlas/engine
+npm run analyze --workspace=@codeatlas/engine -- /path/to/repo --summary report.md --out analysis.json
+```
+
+This repo's own CI runs the action on itself (`uses: ./`), so the published action is tested on every push.
+
 ## Screenshot / demo GIF
 
 ![CodeAtlas dashboard](docs/screenshot.png)
@@ -46,7 +76,7 @@ flowchart LR
         M --> DASH["packages/web — dashboard<br/>(ranking + graph + narrative)"]
         OK --> DASH
         NO --> DASH
-        M --> CI["GitHub Actions:<br/>self-analyze.ts + quality gate"]
+        M --> CI["GitHub Action:<br/>analyze.ts + quality gate"]
     end
 ```
 
@@ -95,6 +125,13 @@ npm test --workspaces --if-present
 npm run dev --workspace=@codeatlas/web
 # open http://localhost:3000
 ```
+
+### Deploying the dashboard publicly
+
+The dashboard analyzes one server-chosen repo (`CODEATLAS_REPO_PATH`, default: this monorepo) —
+the API never takes a path from the request. Each "Run analysis" makes a paid Claude call, so runs
+are limited to one per `CODEATLAS_ANALYZE_COOLDOWN_SECONDS` (default 600) and concurrent clicks share
+one in-flight run; inside the cooldown the latest result is returned with HTTP 429.
 
 ## How this was built — real bugs found along the way
 
