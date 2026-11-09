@@ -23,6 +23,8 @@ jobs:
 
       - run: npm test --workspaces --if-present
 
+      - run: npm run lint --workspace=@codeatlas/web
+
   self-analysis:
     runs-on: ubuntu-latest
     steps:
@@ -38,13 +40,14 @@ jobs:
           node-version: "20"
           cache: "npm"
 
-      - run: npm ci
-
-      # Deterministic engine only — analyzeRepository never calls the LLM
-      # (that's packages/llm-synthesis's separate concern, already covered
-      # by its own contract tests with no live API call). No API key, no
-      # spend, on every push.
-      - run: npm run self-analyze --workspace=@codeatlas/engine
+      # Dogfoods the published GitHub Action (action.yml) on this repo:
+      # deterministic engine only, no LLM, no API key, no spend.
+      # 0.95 is deliberately high: legitimately complex test files already
+      # score ~0.87, so the gate catches an extreme regression, not normal work.
+      - uses: ./
+        with:
+          max-hotspot: "0.95"
+          output: packages/engine/analysis.json
 
       - uses: actions/upload-artifact@v4
         if: always()

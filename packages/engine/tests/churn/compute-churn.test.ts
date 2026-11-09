@@ -65,3 +65,38 @@ describe('computeChurn — asOf is injected, not read from the real clock', () =
     expect(results).toEqual([]);
   });
 });
+
+describe('computeChurn — repoPath is a subdirectory of the git repo', () => {
+  it('reports paths relative to repoPath and ignores files outside it', async () => {
+    const { execFileSync } = await import('node:child_process');
+    const { mkdirSync, mkdtempSync, rmSync, writeFileSync } = await import('node:fs');
+    const { tmpdir } = await import('node:os');
+    const path = await import('node:path');
+
+    const root = mkdtempSync(path.join(tmpdir(), 'codeatlas-churn-subdir-'));
+    try {
+      const env = {
+        ...process.env,
+        GIT_AUTHOR_DATE: '2023-12-01T00:00:00Z',
+        GIT_COMMITTER_DATE: '2023-12-01T00:00:00Z',
+      };
+      const git = (...args: string[]) =>
+        execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: root, env });
+      git('init', '-q');
+      mkdirSync(path.join(root, 'pkg'));
+      writeFileSync(path.join(root, 'pkg', 'inner.ts'), 'export {};\n');
+      writeFileSync(path.join(root, 'outer.ts'), 'export {};\n');
+      git('add', '.');
+      git('commit', '-q', '-m', 'init');
+
+      const results = await computeChurn(path.join(root, 'pkg'), {
+        asOf: new Date('2024-01-01T00:00:00Z'),
+        windowDays: 90,
+      });
+
+      expect(results).toEqual([{ module_id: 'inner.ts', churn_commits: 1 }]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});

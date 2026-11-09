@@ -8,7 +8,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "self-analyze": "tsx scripts/self-analyze.ts"
+    "analyze": "tsx scripts/analyze.ts",
+    "self-analyze": "tsx scripts/analyze.ts ../.. --out analysis.json --max-hotspot 0.95"
   },
   "dependencies": {
     "dependency-cruiser": "^17.4.3",

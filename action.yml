@@ -1,0 +1,58 @@
+name: CodeAtlas
+description: >-
+  Deterministic hotspot analysis for TypeScript/JavaScript repos: fuses dependency
+  coupling, cyclomatic complexity and git churn into one ranking, posts it to the job
+  summary, and optionally fails the build past a hotspot threshold. No LLM, no API key.
+author: basartuncay
+branding:
+  icon: map
+  color: orange
+
+inputs:
+  path:
+    description: Directory to analyze, relative to the workspace (use a subfolder for monorepo packages).
+    default: "."
+  max-hotspot:
+    description: Fail the step if any module's hotspot score (0-1) exceeds this. Empty = report only.
+    default: ""
+  top:
+    description: Number of hotspots listed in the job summary.
+    default: "10"
+  output:
+    description: Where to write the full JSON model, relative to the workspace.
+    default: codeatlas-analysis.json
+
+outputs:
+  report:
+    description: Path to the JSON analysis model.
+    value: ${{ steps.analyze.outputs.report }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+
+    - name: Install CodeAtlas engine
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: npm ci --workspace=@codeatlas/engine --include-workspace-root=false --no-audit --no-fund
+
+    - name: Analyze
+      id: analyze
+      shell: bash
+      working-directory: ${{ github.action_path }}/packages/engine
+      env:
+        TARGET: ${{ github.workspace }}/${{ inputs.path }}
+        OUTPUT: ${{ github.workspace }}/${{ inputs.output }}
+        MAX_HOTSPOT: ${{ inputs.max-hotspot }}
+        TOP: ${{ inputs.top }}
+      run: |
+        if [ "$(git -C "$TARGET" rev-parse --is-shallow-repository 2>/dev/null)" = "true" ]; then
+          echo "::warning::Shallow clone: churn numbers will be near zero. Use actions/checkout with fetch-depth: 0."
+        fi
+        args=("$TARGET" --out "$OUTPUT" --summary "$GITHUB_STEP_SUMMARY" --top "$TOP")
+        if [ -n "$MAX_HOTSPOT" ]; then args+=(--max-hotspot "$MAX_HOTSPOT"); fi
+        echo "report=$OUTPUT" >> "$GITHUB_OUTPUT"
+        npx tsx scripts/analyze.ts "${args[@]}"

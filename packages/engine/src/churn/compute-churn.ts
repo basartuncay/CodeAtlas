@@ -54,12 +54,16 @@ export async function computeChurn(repoPath: string, window: ChurnWindow): Promi
     [
       'log',
       '--no-renames',
+      // Paths relative to repoPath (and limited to it), so analyzing a
+      // subdirectory of a repo still lines up with the module ids.
+      '--relative',
       '--numstat',
       `--since=${since}`,
       `--until=${until}`,
       `--pretty=format:${COMMIT_MARKER}`,
     ],
-    { cwd: repoPath },
+    // Default 1 MB stdout cap is too small for a busy 90-day history.
+    { cwd: repoPath, maxBuffer: 256 * 1024 * 1024 },
   );
 
   const commitCountByModule = countCommitsPerFile(stdout);

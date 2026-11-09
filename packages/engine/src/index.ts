@@ -30,3 +30,6 @@ export type { Risk, RiskSeverity } from './risks/types';
 
 export { analyzeRepository } from './analyze/analyze-repository';
 export type { AnalysisResult, AnalyzeOptions, ModuleResult } from './analyze/types';
+
+export { evaluateQualityGate, renderSummary } from './report/render-summary';
+export type { QualityGateResult } from './report/render-summary';
