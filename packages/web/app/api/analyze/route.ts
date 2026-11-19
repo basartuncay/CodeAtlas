@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from 'node:crypto';
 import path from 'node:path';
 import { analyzeRepository } from '@codeatlas/engine';
 import { synthesizeFindings, validateFindings } from '@codeatlas/llm-synthesis';
@@ -15,6 +16,10 @@ const REPO_PATH = process.env.CODEATLAS_REPO_PATH
 // Each POST makes a paid Claude call. On a public deployment that must be
 // bounded: at most one run per cooldown window, and never two at once.
 const COOLDOWN_MS = Number(process.env.CODEATLAS_ANALYZE_COOLDOWN_SECONDS ?? '600') * 1000;
+
+// Optional shared secret: when set, POST needs a matching x-codeatlas-token header.
+const ANALYZE_TOKEN = process.env.CODEATLAS_ANALYZE_TOKEN;
+const sha256 = (value: string) => createHash('sha256').update(value).digest();
 
 const globalForRun = globalThis as typeof globalThis & {
   __codeatlasAnalysisInFlight?: Promise<CachedAnalysis> | null;
@@ -35,7 +40,10 @@ async function runAnalysis(): Promise<CachedAnalysis> {
  * — and caches the combined result. Concurrent callers share one in-flight
  * run; within the cooldown the cached result is returned with 429.
  */
-export async function POST(): Promise<Response> {
+export async function POST(request: Request): Promise<Response> {
+  if (ANALYZE_TOKEN && !timingSafeEqual(sha256(request.headers.get('x-codeatlas-token') ?? ''), sha256(ANALYZE_TOKEN))) {
+    return Response.json({ error: 'Unauthorized.' }, { status: 401 });
+  }
   const inFlight = globalForRun.__codeatlasAnalysisInFlight;
   if (inFlight) {
     return Response.json(await inFlight);

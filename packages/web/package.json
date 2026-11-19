@@ -14,7 +14,7 @@
     "@codeatlas/llm-synthesis": "0.0.0",
     "@xyflow/react": "^12.11.6",
     "dagre": "^0.8.5",
-    "next": "16.3.5",
+    "next": "16.4.6",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
@@ -25,7 +25,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.3.5",
+    "eslint-config-next": "16.4.6",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

@@ -132,6 +132,10 @@ The dashboard analyzes one server-chosen repo (`CODEATLAS_REPO_PATH`, default: t
 the API never takes a path from the request. Each "Run analysis" makes a paid Claude call, so runs
 are limited to one per `CODEATLAS_ANALYZE_COOLDOWN_SECONDS` (default 600) and concurrent clicks share
 one in-flight run; inside the cooldown the latest result is returned with HTTP 429.
+Set `CODEATLAS_ANALYZE_TOKEN` to require a shared secret: `POST /api/analyze` then answers 401 unless
+the request carries a matching `x-codeatlas-token` header (e.g. `curl -X POST -H "x-codeatlas-token: $TOKEN" …`).
+The "Run analysis" button does not send it, so on a token-protected deployment runs are started from the
+command line and the page shows the cached result.
 
 ## How this was built — real bugs found along the way
 
